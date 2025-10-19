@@ -72,10 +72,12 @@ const request = async (method, url, data = null, initDataToUse = null) => {
       const telegramId = extractTelegramIdFromInitData(initDataToUseFinal);
       if (telegramId) {
         headers["X-Telegram-User-ID"] = telegramId.toString();
-        // дублировать в другие варианты нет смысла — достаточно одного правильного
+        console.log("🔍 Extracted telegram_id from initData:", telegramId);
+      } else {
+        console.warn("⚠️ No telegram_id found in initData");
       }
 
-      // Добавляем в тело запроса (необязательно, но может помочь при отладке)
+      // Добавляем в тело запроса
       if (data) {
         data.initData = initDataToUseFinal;
         if (telegramId) {
@@ -85,6 +87,12 @@ const request = async (method, url, data = null, initDataToUse = null) => {
     } else if (initDataToUseFinal) {
       // Для других запросов добавляем стандартный заголовок
       headers["x-init-data"] = initDataToUseFinal;
+    }
+
+    // Отладочная информация для логина
+    if (method === "POST" && url === "/auth/login") {
+      console.log("🔍 Login request headers:", headers);
+      console.log("🔍 Login request body:", data);
     }
 
 

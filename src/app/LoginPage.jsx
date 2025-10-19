@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Button,
+  TextField,
   Typography,
   Container,
   Alert,
@@ -11,15 +12,22 @@ import { SimpleLoadingScreen } from '../components/screens/SimpleLoadingScreen';
 
 export function LoginPage() {
   const { firstLogin, initTelegramAuth, error, loading, clearError } = useAuthStore();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     // Автоматически инициализируем Telegram авторизацию при загрузке страницы
     initTelegramAuth();
   }, [initTelegramAuth]);
 
-  const handleTelegramLogin = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!username || !password) return;
+    
+    // Очищаем предыдущие ошибки
     clearError();
-    await firstLogin();
+    
+    const result = await firstLogin(username, password);
   };
 
   // Show loading screen during authentication
@@ -49,33 +57,81 @@ export function LoginPage() {
           Telegram Mini App
         </Typography>
 
-        {/* Telegram Login */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {error && (
-            <Alert 
-              severity="error" 
-              sx={styles.error}>
-              {error}
-            </Alert>
-          )}
+        {/* Login Form */}
+        <form onSubmit={handleSubmit}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label="Username"
+              variant="outlined"
+              fullWidth
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: '#ffffff',
+                  '& fieldset': { borderColor: '#373758' },
+                  '&:hover fieldset': { borderColor: '#8483AE' },
+                  '&.Mui-focused fieldset': { borderColor: '#9266FF' }
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#5A5984',
+                  '&.Mui-focused': { color: '#9266FF' }
+                }
+              }}
+            />
 
-          <Button
-            onClick={handleTelegramLogin}
-            variant="contained"
-            size="large"
-            fullWidth
-            sx={{
-              background: 'linear-gradient(135deg, #9266FF 0%, #6932EB 100%)',
-              color: '#F4F4FF',
-              py: 1.5,
-              '&:hover': {
-                background: 'linear-gradient(135deg, #6932EB 0%, #5A2980 100%)'
-              }
-            }}
-          >
-            Login with Telegram
-          </Button>
-        </Box>
+            <TextField
+              label="Password"
+              type="password"
+              variant="outlined"
+              fullWidth
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: '#ffffff',
+                  '& fieldset': { borderColor: '#373758' },
+                  '&:hover fieldset': { borderColor: '#8483AE' },
+                  '&.Mui-focused fieldset': { borderColor: '#9266FF' }
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#5A5984',
+                  '&.Mui-focused': { color: '#9266FF' }
+                }
+              }}
+            />
+
+            {error && (
+              <Alert 
+                severity="error" 
+                sx={styles.error}>
+                {error}
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              fullWidth
+              disabled={!username || !password}
+              sx={{
+                background: 'linear-gradient(135deg, #9266FF 0%, #6932EB 100%)',
+                color: '#F4F4FF',
+                py: 1.5,
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #6932EB 0%, #5A2980 100%)'
+                },
+                '&:disabled': {
+                  background: 'linear-gradient(135deg, #626290 0%, #373758 100%)',
+                  color: '#5A5984'
+                }
+              }}
+            >
+              Login
+            </Button>
+          </Box>
+        </form>
       </Box>
     </Container>
   );

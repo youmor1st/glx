@@ -101,14 +101,14 @@ export const useAuthStore = create((set, get) => ({
   },
 
   /**
-   * Логин через Telegram (только для продакшн)
+   * Логин с username/password + Telegram ID
    */
-  firstLogin: async () => {
+  firstLogin: async (username, password) => {
     try {
       set({ loading: true, error: null });
       
-      // Используем только Telegram авторизацию
-      const { body, err } = await api.post("/auth/login");
+      // Отправляем username, password + Telegram ID из initData
+      const { body, err } = await api.post("/auth/login", { username, password });
 
       if (body && !err) {
         // Сохраняем access_token в localStorage для последующих запросов
