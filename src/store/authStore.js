@@ -174,21 +174,29 @@ export const useAuthStore = create((set, get) => ({
       }
       
       // Отправляем запрос с Telegram данными
-      const result = await api.post("/auth/login", { username, password }, currentInitData, telegramId);
+      try {
+        const result = await api.post("/auth/login", { username, password }, currentInitData, telegramId);
 
-      if (result) {
-        // Сохраняем access_token в localStorage для последующих запросов
-        if (result.access_token) {
-          localStorage.setItem('access_token', result.access_token);
+        if (result) {
+          // Сохраняем access_token в localStorage для последующих запросов
+          if (result.access_token) {
+            localStorage.setItem('access_token', result.access_token);
+          }
+          
+          set({ user: result.user || result, loading: false, error: null });
+          toast.success("Logged in successfully");
+          return { success: true, user: result.user || result };
+        } else {
+          set({ error: "Login failed", loading: false });
+          toast.error("Login failed");
+          return { success: false, error: "Login failed" };
         }
-        
-        set({ user: result.user || result, loading: false });
-        toast.success("Logged in successfully");
-        return { success: true, user: result.user || result };
-      } else {
-        set({ error: "Login failed", loading: false });
-        toast.error("Login failed");
-        return { success: false, error: "Login failed" };
+      } catch (apiError) {
+        console.error("🔍 API Error details:", apiError);
+        const errorMessage = apiError?.message || apiError?.detail || apiError || "Login failed";
+        set({ error: errorMessage, loading: false });
+        toast.error(errorMessage);
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       set({ error: error.message, loading: false });

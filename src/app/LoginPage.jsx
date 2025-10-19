@@ -63,7 +63,15 @@ export function LoginPage() {
             severity="warning" 
             sx={styles.warning}
           >
-            This app should be opened from Telegram. Some features may not work properly.
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+              ⚠️ Приложение запущено вне Telegram
+            </Typography>
+            <Typography variant="body2">
+              Для полной функциональности откройте приложение через Telegram
+            </Typography>
+            <Typography variant="caption" sx={{ mt: 1, display: 'block', opacity: 0.8 }}>
+              Используется тестовый Telegram ID: 123456789
+            </Typography>
           </Alert>
         )}
 
@@ -115,7 +123,15 @@ export function LoginPage() {
               <Alert 
                 severity="error" 
                 sx={styles.error}>
-                {error}
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  Ошибка входа:
+                </Typography>
+                <Typography variant="body2">
+                  {error}
+                </Typography>
+                <Typography variant="caption" sx={{ mt: 1, display: 'block', opacity: 0.8 }}>
+                  Проверьте правильность username/password или обратитесь к администратору
+                </Typography>
               </Alert>
             )}
 

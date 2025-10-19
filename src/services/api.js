@@ -25,11 +25,20 @@ const extractTelegramIdFromInitData = (initData) => {
  */
 const getTelegramId = () => {
   try {
+    console.log("🔍 Checking for Telegram WebApp...");
+    console.log("🔍 window.Telegram exists:", typeof window !== 'undefined' && !!window.Telegram);
+    
     const webApp = window?.Telegram?.WebApp;
     if (!webApp) {
-      console.warn("⚠️ No Telegram WebApp found - using fallback ID for testing");
-      return 123456789; // Fallback ID для тестирования
+    // Проверяем, есть ли настроенный fallback ID
+    const fallbackId = localStorage.getItem('telegram_fallback_id') || '123456789';
+    console.warn("⚠️ No Telegram WebApp found - using fallback ID for testing:", fallbackId);
+    return parseInt(fallbackId);
     }
+
+    console.log("🔍 Telegram WebApp found:", !!webApp);
+    console.log("🔍 initDataUnsafe:", webApp.initDataUnsafe);
+    console.log("🔍 initData:", webApp.initData);
 
     if (webApp.initDataUnsafe?.user?.id) {
       console.log("🔍 Found telegram_id in initDataUnsafe:", webApp.initDataUnsafe.user.id);
@@ -37,6 +46,7 @@ const getTelegramId = () => {
     }
 
     if (webApp.initData) {
+      console.log("🔍 Parsing initData:", webApp.initData);
       const telegramId = extractTelegramIdFromInitData(webApp.initData);
       if (telegramId) {
         console.log("🔍 Found telegram_id in initData:", telegramId);
@@ -44,11 +54,14 @@ const getTelegramId = () => {
       }
     }
 
-    console.warn("⚠️ No Telegram ID found in WebApp - using fallback ID for testing");
-    return 123456789; // Fallback ID для тестирования
+    // Проверяем, есть ли настроенный fallback ID
+    const fallbackId = localStorage.getItem('telegram_fallback_id') || '123456789';
+    console.warn("⚠️ No Telegram ID found in WebApp - using fallback ID for testing:", fallbackId);
+    return parseInt(fallbackId);
   } catch (error) {
     console.warn("⚠️ Error getting Telegram ID:", error);
-    return 123456789; // Fallback ID для тестирования
+    const fallbackId = localStorage.getItem('telegram_fallback_id') || '123456789';
+    return parseInt(fallbackId);
   }
 };
 
