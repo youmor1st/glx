@@ -8,11 +8,37 @@ import {
   getSavedUsername
 } from "../utils/devHelpers.js";
 
+/**
+ * Извлекает telegram_id из initData строки
+ * @param {string} initData - строка initData от Telegram
+ * @returns {number|null} telegram_id или null
+ */
+const extractTelegramIdFromInitData = (initData) => {
+  try {
+    if (!initData) return null;
 
+    // Разбираем строку initData
+    const params = new URLSearchParams(initData);
+    const userParam = params.get("user");
+
+    if (userParam) {
+      const userData = JSON.parse(decodeURIComponent(userParam));
+      return userData?.id || null;
+    }
+
+    return null;
+  } catch (error) {
+    console.warn("Ошибка при извлечении telegram_id из initData:", error);
+    return null;
+  }
+};
 
 const BASE_URL = EXAMPLE_URL;
 
-const request = async (method, url, data = null) => {
+/**
+ * Универсальный HTTP-запрос
+ */
+const request = async (method, url, data = null, initDataToUse = null) => {
   try {
     const headers = {
       "Content-Type": "application/json",
@@ -20,7 +46,7 @@ const request = async (method, url, data = null) => {
 
     // ✅ добавляем initData или token из cookies
     const initData = getCookie("initData");
-    let initDataToUse = initData;
+    let initDataToUseFinal = initDataToUse || initData;
     
     // Проверяем access_token из localStorage
     const accessToken = localStorage.getItem('access_token');
@@ -31,41 +57,52 @@ const request = async (method, url, data = null) => {
     // В dev режиме всегда генерируем новый initData, игнорируя URL
     if (isDevMode()) {
       const savedUsername = getSavedUsername();
-      initDataToUse = generateMockInitData(savedUsername);
+      initDataToUseFinal = generateMockInitData(savedUsername);
       
       // Dev режим: генерируем мок initData на основе сохраненного username
-    } else if (!initDataToUse) {
+    } else if (!initDataToUseFinal) {
       // В продакшн режиме проверяем URL параметры для реальных данных Telegram
       const urlParams = new URLSearchParams(window.location.search);
       const tgWebAppData = urlParams.get('tgWebAppData');
       
       if (tgWebAppData) {
-        initDataToUse = tgWebAppData;
+        initDataToUseFinal = tgWebAppData;
       }
     }
 
-    if (initDataToUse) {
-      headers["x-init-data"] = initDataToUse;
+    // Если это запрос на /auth/login и есть initData — добавляем заголовки
+    if (method === "POST" && url === "/auth/login" && initDataToUseFinal) {
+      // Основной заголовок, который ждёт бекенд
+      headers["X-Telegram-Init-Data"] = initDataToUseFinal;
+
+      // Дополнительные заголовки (на всякий случай)
+      headers["x-telegram-init-data"] = initDataToUseFinal;
+      headers["telegram-init-data"] = initDataToUseFinal;
+
+      // Извлекаем telegram_id из initData
+      const telegramId = extractTelegramIdFromInitData(initDataToUseFinal);
+      if (telegramId) {
+        headers["X-Telegram-User-ID"] = telegramId.toString();
+        // дублировать в другие варианты нет смысла — достаточно одного правильного
+      }
+
+      // Добавляем в тело запроса (необязательно, но может помочь при отладке)
+      if (data) {
+        data.initData = initDataToUseFinal;
+        if (telegramId) {
+          data.telegram_id = telegramId;
+        }
+      }
+    } else if (initDataToUseFinal) {
+      // Для других запросов добавляем стандартный заголовок
+      headers["x-init-data"] = initDataToUseFinal;
     }
 
     const options = {
-    method,
+      method,
       headers,
       // credentials: "include", // убираем из-за CORS проблем
     };
-
-    // Если это POST запрос на /auth/login, добавляем initData в заголовки и тело
-    if (method === "POST" && url === "/auth/login" && initDataToUse) {
-      // Добавляем в заголовки
-      headers["x-init-data"] = initDataToUse;
-      headers["telegram-init-data"] = initDataToUse;
-      headers["x-telegram-init-data"] = initDataToUse; // Еще один вариант
-      
-      // Также добавляем в тело запроса
-      if (data) {
-        data.initData = initDataToUse;
-      }
-    }
 
     if (data) options.body = JSON.stringify(data);
 
