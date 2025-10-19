@@ -59,6 +59,12 @@ const request = async (method, url, data = null, initDataToUse = null) => {
       }
     }
 
+    // Проверяем, что initData содержит реальные Telegram данные, а не мок
+    if (initDataToUseFinal && initDataToUseFinal.includes('function()')) {
+      console.warn("⚠️ Invalid initData detected, clearing it");
+      initDataToUseFinal = null;
+    }
+
     // Если это запрос на /auth/login и есть initData — добавляем заголовки
     if (method === "POST" && url === "/auth/login" && initDataToUseFinal) {
       // Основной заголовок, который ждёт бекенд
@@ -87,6 +93,12 @@ const request = async (method, url, data = null, initDataToUse = null) => {
     } else if (initDataToUseFinal) {
       // Для других запросов добавляем стандартный заголовок
       headers["x-init-data"] = initDataToUseFinal;
+    }
+
+    // Если это запрос на /auth/login, но нет реальных Telegram данных
+    if (method === "POST" && url === "/auth/login" && !initDataToUseFinal) {
+      console.warn("⚠️ No valid Telegram initData found - sending request without telegram_id");
+      console.log("🔍 This might work if backend doesn't require telegram_id");
     }
 
     // Отладочная информация для логина

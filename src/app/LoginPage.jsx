@@ -11,7 +11,7 @@ import { useAuthStore } from '../store/authStore';
 import { SimpleLoadingScreen } from '../components/screens/SimpleLoadingScreen';
 
 export function LoginPage() {
-  const { firstLogin, initTelegramAuth, error, loading, clearError } = useAuthStore();
+  const { firstLogin, initTelegramAuth, error, loading, clearError, initData } = useAuthStore();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -56,6 +56,16 @@ export function LoginPage() {
         >
           Telegram Mini App
         </Typography>
+
+        {/* Warning if no Telegram data */}
+        {!initData && (
+          <Alert 
+            severity="warning" 
+            sx={styles.warning}
+          >
+            This app should be opened from Telegram. Some features may not work properly.
+          </Alert>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
@@ -163,6 +173,11 @@ const styles = {
   error: {
     backgroundColor: 'rgba(235, 43, 75, 0.1)',
     border: '1px solid rgba(235, 43, 75, 0.3)',
+    color: '#F4F4FF'
+  },
+  warning: {
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+    border: '1px solid rgba(255, 193, 7, 0.3)',
     color: '#F4F4FF'
   },
 }

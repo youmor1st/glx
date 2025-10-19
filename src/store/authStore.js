@@ -24,8 +24,9 @@ export const useAuthStore = create((set, get) => ({
       const launchParams = retrieveLaunchParams();
       const tgInitData = launchParams?.initData || initData.raw;
 
-      if (!tgInitData) {
-        toast.error("Telegram init data not found");
+      // Проверяем, что initData содержит реальные Telegram данные
+      if (!tgInitData || tgInitData.includes('function()')) {
+        console.warn("⚠️ No valid Telegram initData found - app might not be running in Telegram");
         return;
       }
 
@@ -38,10 +39,10 @@ export const useAuthStore = create((set, get) => ({
       if (body && !err) {
         set({ user: body });
       } else {
-        toast.error("Failed to fetch user data");
+        console.warn("Failed to fetch user data - user might need to login");
       }
     } catch (error) {
-      toast.error("Authorization failed");
+      console.warn("Telegram auth initialization failed:", error);
     }
   },
 
