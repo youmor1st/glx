@@ -6,6 +6,43 @@ import { setCookie, getCookie, deleteCookie } from "../utils/cookies";
 import toast from "react-hot-toast";
 
 /**
+ * Получает Telegram ID из Telegram WebApp
+ */
+const getTelegramId = () => {
+  try {
+    // Проверяем, есть ли Telegram WebApp
+    if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
+      const webApp = window.Telegram.WebApp;
+      
+      // Пытаемся получить ID из initDataUnsafe
+      if (webApp.initDataUnsafe && webApp.initDataUnsafe.user && webApp.initDataUnsafe.user.id) {
+        console.log("🔍 Found telegram_id in initDataUnsafe:", webApp.initDataUnsafe.user.id);
+        return webApp.initDataUnsafe.user.id;
+      }
+      
+      // Пытаемся получить ID из initData
+      if (webApp.initData) {
+        const params = new URLSearchParams(webApp.initData);
+        const userParam = params.get("user");
+        if (userParam) {
+          const userData = JSON.parse(decodeURIComponent(userParam));
+          if (userData?.id) {
+            console.log("🔍 Found telegram_id in initData:", userData.id);
+            return userData.id;
+          }
+        }
+      }
+    }
+    
+    console.warn("⚠️ No Telegram WebApp found or no user ID available");
+    return null;
+  } catch (error) {
+    console.warn("⚠️ Error getting Telegram ID:", error);
+    return null;
+  }
+};
+
+/**
  * Auth store — отвечает за Telegram авторизацию и хранение пользователя.
  * Работает даже после перезагрузки (initData из cookies).
  */
@@ -108,22 +145,28 @@ export const useAuthStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      // Отправляем username, password + Telegram ID из initData
-      const { body, err } = await api.post("/auth/login", { username, password });
+      // Получаем Telegram данные
+      const currentInitData = getCookie("initData");
+      const telegramId = getTelegramId();
+      
+      console.log("🔍 Login with:", { username, telegramId, hasInitData: !!currentInitData });
+      
+      // Отправляем запрос с Telegram данными
+      const result = await api.post("/auth/login", { username, password }, currentInitData, telegramId);
 
-      if (body && !err) {
+      if (result) {
         // Сохраняем access_token в localStorage для последующих запросов
-        if (body.access_token) {
-          localStorage.setItem('access_token', body.access_token);
+        if (result.access_token) {
+          localStorage.setItem('access_token', result.access_token);
         }
         
-        set({ user: body.user || body, loading: false });
+        set({ user: result.user || result, loading: false });
         toast.success("Logged in successfully");
-        return { success: true, user: body.user || body };
+        return { success: true, user: result.user || result };
       } else {
-        set({ error: err?.message || "Login failed", loading: false });
+        set({ error: "Login failed", loading: false });
         toast.error("Login failed");
-        return { success: false, error: err?.message || "Login failed" };
+        return { success: false, error: "Login failed" };
       }
     } catch (error) {
       set({ error: error.message, loading: false });

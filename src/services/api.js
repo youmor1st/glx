@@ -164,10 +164,31 @@ const request = async (method, url, data = null, initDataToUse = null) => {
   }
 };
 
-// Унифицированный объект API
+// Упрощенный API с поддержкой Telegram данных
 export const api = {
   get: (url) => request("GET", url),
-  post: (url, data) => request("POST", url, data),
+  post: async (url, data, initData = null, telegramId = null) => {
+    const BASE_URL = import.meta.env.VITE_API_URL || "https://dem-1-w8zo.onrender.com";
+
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (initData) headers["X-Telegram-Init-Data"] = initData;
+    if (telegramId) headers["X-Telegram-User-ID"] = telegramId.toString();
+
+    console.log("📤 Отправляем запрос", { url, headers, data });
+
+    const res = await fetch(`${BASE_URL}${url}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    });
+
+    const text = await res.text();
+    console.log("📩 Ответ:", text);
+    return res.ok ? JSON.parse(text) : Promise.reject(text);
+  },
   put: (url, data) => request("PUT", url, data),
   del: (url) => request("DELETE", url),
 };
