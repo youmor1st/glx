@@ -10,9 +10,15 @@ import toast from "react-hot-toast";
  */
 const getTelegramId = () => {
   try {
+    console.log("🔍 Checking for Telegram WebApp...");
+    console.log("🔍 window.Telegram exists:", typeof window !== 'undefined' && !!window.Telegram);
+    
     // Проверяем, есть ли Telegram WebApp
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
       const webApp = window.Telegram.WebApp;
+      console.log("🔍 Telegram WebApp found:", !!webApp);
+      console.log("🔍 initDataUnsafe:", webApp.initDataUnsafe);
+      console.log("🔍 initData:", webApp.initData);
       
       // Пытаемся получить ID из initDataUnsafe
       if (webApp.initDataUnsafe && webApp.initDataUnsafe.user && webApp.initDataUnsafe.user.id) {
@@ -22,10 +28,13 @@ const getTelegramId = () => {
       
       // Пытаемся получить ID из initData
       if (webApp.initData) {
+        console.log("🔍 Parsing initData:", webApp.initData);
         const params = new URLSearchParams(webApp.initData);
         const userParam = params.get("user");
+        console.log("🔍 userParam from initData:", userParam);
         if (userParam) {
           const userData = JSON.parse(decodeURIComponent(userParam));
+          console.log("🔍 Parsed userData:", userData);
           if (userData?.id) {
             console.log("🔍 Found telegram_id in initData:", userData.id);
             return userData.id;
@@ -35,6 +44,7 @@ const getTelegramId = () => {
     }
     
     console.warn("⚠️ No Telegram WebApp found or no user ID available");
+    console.log("🔍 Available window properties:", Object.keys(window).filter(key => key.toLowerCase().includes('telegram')));
     return null;
   } catch (error) {
     console.warn("⚠️ Error getting Telegram ID:", error);
@@ -158,6 +168,9 @@ export const useAuthStore = create((set, get) => ({
       
       if (!telegramId) {
         console.warn("⚠️ No Telegram ID found - login might fail");
+        console.log("🔍 This might be because the app is not running in Telegram WebApp");
+        console.log("🔍 For testing, you can manually set a telegram_id in the browser console:");
+        console.log("🔍 window.Telegram = { WebApp: { initDataUnsafe: { user: { id: 123456789 } } } }");
       }
       
       // Отправляем запрос с Telegram данными
