@@ -2,11 +2,6 @@
 import { getCookie } from "../utils/cookies";
 import toast from "react-hot-toast";
 import { EXAMPLE_URL } from "../utils/url.js";
-import { 
-  isDevMode, 
-  generateMockInitData, 
-  getSavedUsername
-} from "../utils/devHelpers.js";
 
 /**
  * Извлекает telegram_id из initData строки
@@ -54,14 +49,8 @@ const request = async (method, url, data = null, initDataToUse = null) => {
       headers["Authorization"] = `Bearer ${accessToken}`;
     }
     
-    // В dev режиме всегда генерируем новый initData, игнорируя URL
-    if (isDevMode()) {
-      const savedUsername = getSavedUsername();
-      initDataToUseFinal = generateMockInitData(savedUsername);
-      
-      // Dev режим: генерируем мок initData на основе сохраненного username
-    } else if (!initDataToUseFinal) {
-      // В продакшн режиме проверяем URL параметры для реальных данных Telegram
+    // Проверяем URL параметры для реальных данных Telegram
+    if (!initDataToUseFinal) {
       const urlParams = new URLSearchParams(window.location.search);
       const tgWebAppData = urlParams.get('tgWebAppData');
       
@@ -97,6 +86,7 @@ const request = async (method, url, data = null, initDataToUse = null) => {
       // Для других запросов добавляем стандартный заголовок
       headers["x-init-data"] = initDataToUseFinal;
     }
+
 
     const options = {
       method,

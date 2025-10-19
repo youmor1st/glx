@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import {
   Box,
   Button,
-  TextField,
   Typography,
   Container,
   Alert,
@@ -11,35 +10,16 @@ import { useAuthStore } from '../store/authStore';
 import { SimpleLoadingScreen } from '../components/screens/SimpleLoadingScreen';
 
 export function LoginPage() {
-  const { firstLogin, checkAuth, error, loading, clearError } = useAuthStore();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const { firstLogin, initTelegramAuth, error, loading, clearError } = useAuthStore();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!username || !password) return;
-    
-    // Очищаем предыдущие ошибки
-    clearError();
-    
-    const result = await firstLogin(username, password);
-    
-    // Если логин успешен, проверяем авторизацию для обновления user в store
-    if (result?.success) {
-      await checkAuth();
-    }
-  };
+  useEffect(() => {
+    // Автоматически инициализируем Telegram авторизацию при загрузке страницы
+    initTelegramAuth();
+  }, [initTelegramAuth]);
 
-  // Dev-only quick login helper
-  const quickLoginDev = async (u, p) => {
-    setUsername(u);
-    setPassword(p);
+  const handleTelegramLogin = async () => {
     clearError();
-    
-    const result = await firstLogin(u, p);
-    if (result?.success) {
-      await checkAuth();
-    }
+    await firstLogin();
   };
 
   // Show loading screen during authentication
@@ -66,107 +46,36 @@ export function LoginPage() {
           variant="h5" 
           sx={styles.subtitle}
         >
-          mini app
+          Telegram Mini App
         </Typography>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <TextField
-              label="Username"
-              variant="outlined"
-              fullWidth
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: '#ffffff',
-                  '& fieldset': { borderColor: '#373758' },
-                  '&:hover fieldset': { borderColor: '#8483AE' },
-                  '&.Mui-focused fieldset': { borderColor: '#9266FF' }
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#5A5984',
-                  '&.Mui-focused': { color: '#9266FF' }
-                }
-              }}
-            />
+        {/* Telegram Login */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={styles.error}>
+              {error}
+            </Alert>
+          )}
 
-            <TextField
-              label="Password"
-              type="password"
-              variant="outlined"
-              fullWidth
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: '#ffffff',
-                  '& fieldset': { borderColor: '#373758' },
-                  '&:hover fieldset': { borderColor: '#8483AE' },
-                  '&.Mui-focused fieldset': { borderColor: '#9266FF' }
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#5A5984',
-                  '&.Mui-focused': { color: '#9266FF' }
-                }
-              }}
-            />
-
-            {error && (
-              <Alert 
-                severity="error" 
-                sx={styles.error}>
-                {error}
-              </Alert>
-            )}
-
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              fullWidth
-              disabled={!username || !password}
-              sx={{
-                background: 'linear-gradient(135deg, #9266FF 0%, #6932EB 100%)',
-                color: '#F4F4FF',
-                py: 1.5,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #6932EB 0%, #5A2980 100%)'
-                },
-                '&:disabled': {
-                  background: 'linear-gradient(135deg, #626290 0%, #373758 100%)',
-                  color: '#5A5984'
-                }
-              }}
-            >
-              Login
-            </Button>
-          </Box>
-        </form>
-
-        {/* Development Mode: Hidden quick login buttons */}
-        {import.meta.env.DEV && (
-          <Box sx={{ mt: 3 }}>
-            <Typography 
-              variant="caption" 
-              sx={styles.developmentMode}
-            >
-              Development Mode
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-              <Button size="small" variant="text" sx={{ color: '#5A5984' }} onClick={() => quickLoginDev('testAdmin', '885522yy')}>
-                Admin
-              </Button>
-              <Button size="small" variant="text" sx={{ color: '#5A5984' }} onClick={() => quickLoginDev('testTeacher', '774411yy')}>
-                Teacher
-              </Button>
-              <Button size="small" variant="text" sx={{ color: '#5A5984' }} onClick={() => quickLoginDev('testStudent', '996633yy')}>
-                Student
-              </Button>
-            </Box>
-          </Box>
-        )}
+          <Button
+            onClick={handleTelegramLogin}
+            variant="contained"
+            size="large"
+            fullWidth
+            sx={{
+              background: 'linear-gradient(135deg, #9266FF 0%, #6932EB 100%)',
+              color: '#F4F4FF',
+              py: 1.5,
+              '&:hover': {
+                background: 'linear-gradient(135deg, #6932EB 0%, #5A2980 100%)'
+              }
+            }}
+          >
+            Login with Telegram
+          </Button>
+        </Box>
       </Box>
     </Container>
   );
@@ -200,11 +109,4 @@ const styles = {
     border: '1px solid rgba(235, 43, 75, 0.3)',
     color: '#F4F4FF'
   },
-  developmentMode: {
-    display: 'block',
-    textAlign: 'center',
-    color: '#5A5984',
-    fontSize: '0.75rem',
-    mb: 1
-  }
 }

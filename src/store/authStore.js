@@ -3,7 +3,6 @@ import { create } from "zustand";
 import { initData, retrieveLaunchParams } from "@telegram-apps/sdk-react";
 import { api } from "../services/api";
 import { setCookie, getCookie, deleteCookie } from "../utils/cookies";
-import { saveUsername, clearSavedUsername } from "../utils/devHelpers";
 import toast from "react-hot-toast";
 
 /**
@@ -102,17 +101,14 @@ export const useAuthStore = create((set, get) => ({
   },
 
   /**
-   * Традиционный логин с username/password (для dev режима)
+   * Логин через Telegram (только для продакшн)
    */
-  firstLogin: async (username, password, isDevMode = false) => {
+  firstLogin: async () => {
     try {
       set({ loading: true, error: null });
       
-      // Сохраняем username для генерации стабильного Telegram ID в dev режиме
-      saveUsername(username);
-      
-      // Отправляем только username и password - API сам добавит нужные заголовки
-      const { body, err } = await api.post("/auth/login", { username, password });
+      // Используем только Telegram авторизацию
+      const { body, err } = await api.post("/auth/login");
 
       if (body && !err) {
         // Сохраняем access_token в localStorage для последующих запросов
@@ -174,7 +170,6 @@ export const useAuthStore = create((set, get) => ({
   logout: () => {
     deleteCookie("initData");
     localStorage.removeItem('access_token');
-    clearSavedUsername();
     set({ user: null, initData: null, error: null });
     toast.success("Logged out");
   },
