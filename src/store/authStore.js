@@ -149,7 +149,16 @@ export const useAuthStore = create((set, get) => ({
       const currentInitData = getCookie("initData");
       const telegramId = getTelegramId();
       
-      console.log("🔍 Login with:", { username, telegramId, hasInitData: !!currentInitData });
+      console.log("🔍 Login with:", { 
+        username, 
+        telegramId, 
+        hasInitData: !!currentInitData,
+        initDataValue: currentInitData ? currentInitData.substring(0, 50) + '...' : null
+      });
+      
+      if (!telegramId) {
+        console.warn("⚠️ No Telegram ID found - login might fail");
+      }
       
       // Отправляем запрос с Telegram данными
       const result = await api.post("/auth/login", { username, password }, currentInitData, telegramId);

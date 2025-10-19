@@ -177,7 +177,14 @@ export const api = {
     if (initData) headers["X-Telegram-Init-Data"] = initData;
     if (telegramId) headers["X-Telegram-User-ID"] = telegramId.toString();
 
-    console.log("📤 Отправляем запрос", { url, headers, data });
+    console.log("📤 Отправляем запрос", { 
+      url, 
+      headers, 
+      data,
+      hasInitData: !!initData,
+      hasTelegramId: !!telegramId,
+      telegramIdValue: telegramId
+    });
 
     const res = await fetch(`${BASE_URL}${url}`, {
       method: "POST",
