@@ -28,6 +28,40 @@ const extractTelegramIdFromInitData = (initData) => {
   }
 };
 
+/**
+ * Получает Telegram ID из Telegram WebApp
+ * @returns {number|null} telegram_id или null
+ */
+const getTelegramId = () => {
+  try {
+    // Проверяем, есть ли Telegram WebApp
+    if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
+      const webApp = window.Telegram.WebApp;
+      
+      // Пытаемся получить ID из initDataUnsafe
+      if (webApp.initDataUnsafe && webApp.initDataUnsafe.user && webApp.initDataUnsafe.user.id) {
+        console.log("🔍 Found telegram_id in initDataUnsafe:", webApp.initDataUnsafe.user.id);
+        return webApp.initDataUnsafe.user.id;
+      }
+      
+      // Пытаемся получить ID из initData
+      if (webApp.initData) {
+        const telegramId = extractTelegramIdFromInitData(webApp.initData);
+        if (telegramId) {
+          console.log("🔍 Found telegram_id in initData:", telegramId);
+          return telegramId;
+        }
+      }
+    }
+    
+    console.warn("⚠️ No Telegram WebApp found or no user ID available");
+    return null;
+  } catch (error) {
+    console.warn("⚠️ Error getting Telegram ID:", error);
+    return null;
+  }
+};
+
 const BASE_URL = EXAMPLE_URL;
 
 /**
@@ -65,40 +99,36 @@ const request = async (method, url, data = null, initDataToUse = null) => {
       initDataToUseFinal = null;
     }
 
-    // Если это запрос на /auth/login и есть initData — добавляем заголовки
-    if (method === "POST" && url === "/auth/login" && initDataToUseFinal) {
-      // Основной заголовок, который ждёт бекенд
-      headers["X-Telegram-Init-Data"] = initDataToUseFinal;
-
-      // Дополнительные заголовки (на всякий случай)
-      headers["x-telegram-init-data"] = initDataToUseFinal;
-      headers["telegram-init-data"] = initDataToUseFinal;
-
-      // Извлекаем telegram_id из initData
-      const telegramId = extractTelegramIdFromInitData(initDataToUseFinal);
+    // Если это запрос на /auth/login — добавляем Telegram данные
+    if (method === "POST" && url === "/auth/login") {
+      // Получаем реальный Telegram ID
+      const telegramId = getTelegramId();
+      
       if (telegramId) {
         headers["X-Telegram-User-ID"] = telegramId.toString();
-        console.log("🔍 Extracted telegram_id from initData:", telegramId);
-      } else {
-        console.warn("⚠️ No telegram_id found in initData");
-      }
-
-      // Добавляем в тело запроса
-      if (data) {
-        data.initData = initDataToUseFinal;
-        if (telegramId) {
+        console.log("🔍 Using real telegram_id:", telegramId);
+        
+        // Добавляем в тело запроса
+        if (data) {
           data.telegram_id = telegramId;
+        }
+      } else {
+        console.warn("⚠️ No Telegram ID available - request will fail if backend requires it");
+      }
+      
+      // Добавляем initData если есть
+      if (initDataToUseFinal) {
+        headers["X-Telegram-Init-Data"] = initDataToUseFinal;
+        headers["x-telegram-init-data"] = initDataToUseFinal;
+        headers["telegram-init-data"] = initDataToUseFinal;
+        
+        if (data) {
+          data.initData = initDataToUseFinal;
         }
       }
     } else if (initDataToUseFinal) {
       // Для других запросов добавляем стандартный заголовок
       headers["x-init-data"] = initDataToUseFinal;
-    }
-
-    // Если это запрос на /auth/login, но нет реальных Telegram данных
-    if (method === "POST" && url === "/auth/login" && !initDataToUseFinal) {
-      console.warn("⚠️ No valid Telegram initData found - sending request without telegram_id");
-      console.log("🔍 This might work if backend doesn't require telegram_id");
     }
 
     // Отладочная информация для логина
